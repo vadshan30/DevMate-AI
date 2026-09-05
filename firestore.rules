@@ -1,0 +1,79 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // The path segment must match the caller's uid, AND the request must
+    // be made by a signed-in user. The two checks together mean a user
+    // can only access their OWN subtree.
+    function isOwnUserDoc(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ── Conversation documents ─────────────────────────────────
+    // Path: users/{userId}/conversations/{conversationId}
+    match /users/{userId}/conversations/{conversationId} {
+
+      // Helper: every message in the array must conform to this shape.
+      function isValidMessage(msg) {
+        return msg is list
+          && msg.size() <= 500
+          && msg.all(m,
+            m is map
+            && (m.role == 'user' || m.role == 'assistant')
+            && m.content is string
+            && m.content.size() > 0
+            && m.content.size() <= 8000
+            && (m.mode == 'debug' || m.mode == 'optimize' || m.mode == 'secure')
+          );
+      }
+
+      // CREATE — the caller MUST own the parent {userId} path, and the
+      // new document must be well-formed.
+      allow create: if isOwnUserDoc(userId)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && (request.resource.data.mode == 'debug'
+          || request.resource.data.mode == 'optimize'
+          || request.resource.data.mode == 'secure')
+        && isValidMessage(request.resource.data.messages)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // READ — owner only.
+      allow read: if isOwnUserDoc(userId);
+
+      // UPDATE — owner only; the userId field cannot change (there is
+      // none, but the {userId} path segment cannot change by definition);
+      // mode and message list must stay valid.
+      allow update: if isOwnUserDoc(userId)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && (request.resource.data.mode == 'debug'
+          || request.resource.data.mode == 'optimize'
+          || request.resource.data.mode == 'secure')
+        && isValidMessage(request.resource.data.messages);
+
+      // DELETE — owner only.
+      allow delete: if isOwnUserDoc(userId);
+
+      // Block any nested collections we don't know about.
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    // Block any other top-level path by default. This includes
+    // /users/{otherUid}/conversations/... because the {userId} wildcard
+    // requires isOwnUserDoc(userId) to return true.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
