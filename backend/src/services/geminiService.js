@@ -6,6 +6,7 @@ import {
 } from '../config/modeInstructions.js';
 
 const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const MAX_HISTORY_TURNS = 20;
 
 let cachedClient = null;
 
@@ -51,16 +52,56 @@ function getModelForMode(mode) {
 }
 
 /**
+ * Convert an array of history turns from the server-side format
+ *   { role: 'user'|'assistant', content: string }
+ * to Gemini's internal Content format:
+ *   { role: 'user'|'model', parts: [{ text }] }
+ *
+ * Only the most recent MAX_HISTORY_TURNS turns are included to avoid
+ * exceeding Gemini's context window.
+ *
+ * @param {Array<{role: string, content: string}>} history
+ * @returns {Array<{role: string, parts: Array<{text: string}>}>}
+ */
+function buildGeminiHistory(history) {
+  const recent = Array.isArray(history) ? history.slice(-MAX_HISTORY_TURNS) : [];
+  return recent.map((turn) => ({
+    role: turn.role === 'user' ? 'user' : 'model',
+    parts: [{ text: turn.content }],
+  }));
+}
+
+/**
  * Send a user message to Gemini under one of the DevMate AI modes.
+ * When `history` is provided, the message is sent as part of an
+ * ongoing conversation, with the previous turns pre-loaded.
+ *
+ * The system instruction (BASE_SYSTEM_INSTRUCTION + mode instruction)
+ * is always applied regardless of history.
  *
  * @param {string} message - The user's developer question / code problem.
  * @param {'debug'|'optimize'|'secure'} mode - Validated mode.
+ * @param {Array<{role: 'user'|'assistant', content: string}>} [history] -
+ *   Prior conversation turns from the database, in chronological order.
  * @returns {Promise<{ text: string, model: string, mode: string }>}
  */
-export async function askDevMate(message, mode) {
+export async function askDevMate(message, mode, history = []) {
   const model = getModelForMode(mode);
-  const result = await model.generateContent(message);
-  const text = result?.response?.text?.() ?? '';
+  const geminiHistory = buildGeminiHistory(history);
+
+  let text;
+  if (geminiHistory.length > 0) {
+    // Multi-turn: use startChat so the model sees the conversation context.
+    // The system instruction is already set on the model at construction time.
+    const chat = model.startChat({ history: geminiHistory });
+    const result = await chat.sendMessage(message);
+    text = result?.response?.text?.() ?? '';
+  } else {
+    // Single-turn: use generateContent directly.
+    const result = await model.generateContent(message);
+    text = result?.response?.text?.() ?? '';
+  }
+
   if (!text) {
     throw new Error('Gemini returned an empty response.');
   }

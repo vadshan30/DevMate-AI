@@ -312,10 +312,12 @@ function DashboardContent({ user, signOut, navigate }) {
       showToast(`Failed to save: ${friendlyErrorMessage(err)}`);
     }
 
-    // 2. Call Gemini
+    // 2. Call Gemini — pass prior messages as conversation history.
+    // `messages` contains only the previous turns (before `userMsg` was appended).
+    // The backend appends the current turn before sending to Gemini.
     let response;
     try {
-      const result = await sendChatMessage(trimmed, mode);
+      const result = await sendChatMessage(trimmed, mode, messages);
       response = result.response;
     } catch (err) {
       console.error('[Dashboard] chat error:', err);

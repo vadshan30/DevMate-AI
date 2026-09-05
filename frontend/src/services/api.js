@@ -36,9 +36,13 @@ function url(path) {
  *
  * @param {string} message - The user's developer question.
  * @param {'debug'|'optimize'|'secure'} [mode='debug'] - DevMate AI mode.
+ * @param {Array<{role: 'user'|'assistant', content: string}>} [history] -
+ *   Previous turns of the active conversation, in chronological order.
+ *   Should NOT include the current `message`; the server appends the
+ *   current user turn and forwards the whole sequence to Gemini.
  * @returns {Promise<{ response: string, model: string, mode: string }>}
  */
-export async function sendChatMessage(message, mode = 'debug') {
+export async function sendChatMessage(message, mode = 'debug', history = []) {
   if (!auth.currentUser) {
     const err = new Error('Not signed in.');
     err.status = 'unauthenticated';
@@ -57,6 +61,20 @@ export async function sendChatMessage(message, mode = 'debug') {
     throw err;
   }
 
+  // Sanitize history before sending: only keep well-shaped user/assistant
+  // turns with string content. Never trust client-shaped data blindly.
+  const safeHistory = Array.isArray(history)
+    ? history
+        .filter(
+          (t) =>
+            t &&
+            typeof t === 'object' &&
+            typeof t.content === 'string' &&
+            (t.role === 'user' || t.role === 'assistant')
+        )
+        .map((t) => ({ role: t.role, content: t.content }))
+    : [];
+
   let response;
   try {
     response = await fetch(url('/api/chat'), {
@@ -65,7 +83,7 @@ export async function sendChatMessage(message, mode = 'debug') {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ message, mode }),
+      body: JSON.stringify({ message, mode, history: safeHistory }),
     });
   } catch (networkErr) {
     console.error('[api] network error:', networkErr);
