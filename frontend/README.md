@@ -1,179 +1,191 @@
 # DevMate AI
 
-> Your AI-powered developer assistant for debugging, optimization, and security.
+<div align="center">
 
-DevMate AI is an AI-powered developer assistant designed to help developers solve common software development problems using specialized AI workflows.
+### Your AI-powered developer assistant for debugging, optimization, and security.
 
-Instead of functioning as a general-purpose chatbot, DevMate AI focuses on three core developer tasks: debugging code, optimizing performance, and identifying security vulnerabilities.
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![Firestore](https://img.shields.io/badge/Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
-The application combines **React, Node.js, Express, Google Gemini, Firebase Authentication, and Cloud Firestore** to provide an interactive developer-focused AI experience with persistent, user-isolated conversation history.
+</div>
 
 ---
 
-## Overview
+## About
 
-Developers frequently spend time debugging errors, improving inefficient code, and identifying security issues.
+DevMate AI is an AI-powered developer assistant that helps developers debug code, optimize performance, and identify security vulnerabilities using Google Gemini.
 
-DevMate AI brings these workflows into a single interface where developers can select a specific mode and receive structured AI-assisted analysis.
+It provides three specialized modes:
 
-### Core Capabilities
+- Debug — identify errors, root causes, and fixes
+- Optimize — analyze complexity and improve performance
+- Secure — detect vulnerabilities and recommend mitigations
 
-| Mode | Purpose |
-|------|---------|
-| Debug | Identify errors, explain root causes, provide fixes, and suggest prevention |
-| Optimize | Analyze complexity, identify bottlenecks, and improve inefficient code |
-| Secure | Identify security vulnerabilities, assess severity, and suggest mitigations |
+---
 
-The application also supports:
+## Features
+
+- AI-powered code analysis with Google Gemini
+- Debug, Optimize, and Secure modes
+- Multi-turn conversations with context
+- Firebase Authentication
+- User-isolated Firestore conversation history
+- Conversation creation, reopening, and deletion
+- Responsive developer-focused interface
+- Secure backend architecture for API communication
+
+---
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Frontend | React 19, Vite |
+| UI | Material UI |
+| Backend | Node.js, Express.js |
+| AI | Google Gemini |
+| Authentication | Firebase Authentication |
+| Database | Cloud Firestore |
+| Security | Firestore Security Rules |
+| Cloud | Google Cloud |
+| Version Control | Git, GitHub |
+
+---
+
+## Architecture
+
+<div align="center">
+
+React Frontend  
+↓  
+Node.js + Express Backend  
+↓  
+Google Gemini  
+↓  
+AI Developer Analysis  
+↓  
+Firestore Conversation History
+
+</div>
+
+---
+
+## Project Structure
+
+    devmate-ai/
+    ├── frontend/
+    │   ├── src/
+    │   └── package.json
+    ├── backend/
+    │   ├── src/
+    │   └── package.json
+    ├── firestore.rules
+    ├── firebase.json
+    ├── .firebaserc
+    ├── .gitignore
+    └── README.md
+
+---
+
+## Getting Started
+
+### 1. Clone the repository
+
+    git clone https://github.com/vadshan30/DevMate-AI.git
+    cd DevMate-AI
+
+### 2. Install frontend dependencies
+
+    cd frontend
+    npm install
+
+### 3. Start frontend
+
+    npm run dev
+
+### 4. Install backend dependencies
+
+    cd ../backend
+    npm install
+
+### 5. Start backend
+
+    npm run dev
+
+Configure the required Firebase and Gemini environment variables before running the application.
+
+---
+
+## Security
+
+DevMate AI follows a backend-based architecture to keep Gemini credentials away from the frontend.
+
+Security features include:
 
 - Firebase Authentication
-- Google Sign-In
-- Multi-turn AI conversations
-- Persistent conversation history
-- User-isolated Firestore storage
-- Conversation management
-- Code formatting and copy functionality
-- Responsive user interface
-- Backend API authentication
-- Structured Gemini responses
-- Defensive security analysis
+- Protected backend API requests
+- Firestore Security Rules
+- User-specific conversation storage
+- Environment-based configuration
+- Backend validation for AI modes
 
 ---
 
-## Application Preview
+## Screenshots
 
 ### Dashboard
 
-> Add your main application screenshot here.
-
 ![DevMate AI Dashboard](screenshots/dashboard.png)
-
-The dashboard provides access to the three primary modes and allows developers to start a new AI-assisted development session.
-
----
 
 ### Debug Mode
 
-> Add a screenshot showing Debug mode with an error analysis here.
-
-![DevMate AI Debug Mode](screenshots/debug-mode.png)
-
-Debug mode helps developers understand programming errors by providing:
-
-- Identified issue
-- Root cause
-- Recommended fix
-- Corrected code
-- Edge cases
-- Prevention suggestions
-
-The goal is to explain the problem rather than simply provide a replacement solution.
-
----
+![Debug Mode](screenshots/debug-mode.png)
 
 ### Optimize Mode
 
-> Add a screenshot showing Optimize mode here.
-
-![DevMate AI Optimize Mode](screenshots/optimize-mode.png)
-
-Optimize mode analyzes the efficiency of a solution and focuses on:
-
-- Current time complexity
-- Current space complexity
-- Performance bottlenecks
-- Algorithm improvements
-- Improved implementation
-- New complexity
-- Trade-offs
-
-This helps developers understand both the original and improved approaches.
-
----
+![Optimize Mode](screenshots/optimize-mode.png)
 
 ### Secure Mode
 
-> Add a screenshot showing Secure mode here.
-
-![DevMate AI Secure Mode](screenshots/secure-mode.png)
-
-Secure mode analyzes code for common security weaknesses, including:
-
-- SQL Injection
-- Hardcoded secrets
-- Weak authentication
-- Missing authorization
-- Cross-Site Scripting
-- Command Injection
-- Path Traversal
-- Sensitive Data Exposure
-- Unsafe Input Handling
-- Insecure Password Handling
-
-Security findings include relevant information such as severity, impact, and recommended mitigation.
+![Secure Mode](screenshots/secure-mode.png)
 
 ---
 
-### Conversation History
+## Future Improvements
 
-> Add a screenshot showing the Recent Chats sidebar here.
-
-![Conversation History](screenshots/conversation-history.png)
-
-DevMate AI stores conversations in Cloud Firestore, allowing users to return to previous development sessions.
-
-Firestore Security Rules are used to isolate user data so that authenticated users can access only their own conversations.
+- GitHub repository integration
+- Advanced code review
+- Automated test generation
+- Larger codebase analysis
+- Additional programming language support
+- Advanced security analysis
 
 ---
 
-## How It Works
+## Project Status
 
-The application follows a simple client-server architecture.
+**MVP Completed**
 
-```text
-                    ┌─────────────────────┐
-                    │      Developer      │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   React Frontend    │
-                    │      + Vite         │
-                    └──────────┬──────────┘
-                               │
-                         Firebase Auth
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Node.js + Express │
-                    │       Backend       │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    Google Gemini    │
-                    │      AI Model       │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Structured AI     │
-                    │      Response       │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   React Chat UI     │
-                    └─────────────────────┘
+DevMate AI currently includes authentication, Gemini-powered developer assistance, Debug/Optimize/Secure modes, multi-turn conversations, and Firestore conversation history.
 
+---
 
-          Firebase Authentication
-                    │
-                    ▼
-              User Identity
-                    │
-                    ▼
-              Cloud Firestore
-                    │
-                    ▼
-          User-Isolated Conversations
+## Repository
+
+GitHub: https://github.com/vadshan30/DevMate-AI
+
+---
+
+<div align="center">
+
+### DevMate AI
+
+**Debug. Optimize. Secure.**
+
+Built with React, Node.js, Gemini, Firebase, Firestore, and Google Cloud.
+
+</div>
