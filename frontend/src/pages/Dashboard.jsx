@@ -415,6 +415,7 @@ function DashboardContent({ user, signOut, navigate }) {
           onClick={handleNewChat}
           variant="contained"
           fullWidth
+          aria-label="Start new conversation"
           startIcon={<AddIcon />}
           sx={{
             py: 1.25,
@@ -448,6 +449,8 @@ function DashboardContent({ user, signOut, navigate }) {
                 onClick={() => handleModeChange(m.id)}
                 variant="text"
                 fullWidth
+                aria-label={`Switch to ${m.label} mode`}
+                aria-pressed={isActive}
                 startIcon={<ModeIcon sx={{ fontSize: 18, color: isActive ? m.badgeColor : 'rgba(255,255,255,0.4)' }} />}
                 sx={{
                   justifyContent: 'flex-start',
@@ -508,6 +511,7 @@ function DashboardContent({ user, signOut, navigate }) {
                     <IconButton
                       size="small"
                       onClick={(e) => { e.stopPropagation(); openDelete(conv); }}
+                      aria-label="Delete conversation"
                       sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#ef4444' } }}
                     >
                       <DeleteOutlineIcon fontSize="small" />
@@ -704,6 +708,8 @@ function DashboardContent({ user, signOut, navigate }) {
                       onClick={() => handleModeChange(m.id)}
                       variant={isActive ? 'contained' : 'text'}
                       size="small"
+                      aria-label={`Switch to ${m.label} mode`}
+                      aria-pressed={isActive}
                       startIcon={<span style={{ fontSize: 14 }}>{m.icon}</span>}
                       sx={{
                         textTransform: 'none',
@@ -954,11 +960,18 @@ function MessageBubble({ message, activeMode }) {
   const bubbleBg = isUser
     ? activeMode.gradient
     : message.isError
-    ? 'rgba(220, 38, 38, 0.12)'
+    ? 'rgba(220, 38, 38, 0.10)'
     : 'rgba(15, 23, 42, 0.85)';
   const bubbleBorder = !isUser
     ? `1px solid ${message.isError ? 'rgba(220, 38, 38, 0.3)' : 'rgba(255,255,255,0.08)'}`
     : 'none';
+  // Subtle mode-colored left accent on assistant bubbles to reinforce
+  // the active mode identity (Debug/Optimize/Secure).
+  const assistantAccent = !isUser && !message.isError
+    ? { borderLeft: `3px solid ${activeMode.badgeColor}` }
+    : !isUser && message.isError
+    ? { borderLeft: '3px solid rgba(220, 38, 38, 0.5)' }
+    : {};
   const bubbleColor = isUser ? 'white' : message.isError ? '#fca5a5' : 'rgba(255,255,255,0.92)';
 
   return (
@@ -995,12 +1008,13 @@ function MessageBubble({ message, activeMode }) {
           background: bubbleBg,
           border: bubbleBorder,
           color: bubbleColor,
+          ...assistantAccent,
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.75 }}>
           {message.isError && (
             <Typography variant="caption" sx={{ color: '#fca5a5', fontWeight: 600 }}>
-              Error
+              ⚠ Error
             </Typography>
           )}
           {!isUser && message.mode && (
@@ -1032,14 +1046,10 @@ function MessageBubble({ message, activeMode }) {
               padding: '1px 6px',
               borderRadius: 1,
             },
-            '& pre': {
-              backgroundColor: 'rgba(0,0,0,0.35)',
-              padding: 2,
-              borderRadius: 2,
-              overflowX: 'auto',
-              margin: '8px 0',
-            },
-            '& pre code': { backgroundColor: 'transparent', padding: 0 },
+            // The CodeBlock component renders its own <pre> with a header.
+            // Suppress the old default pre styling so the CodeBlock
+            // layout wins.
+            '& pre': { all: 'unset' },
           }}
         >
           {renderMessageText(message.content)}
@@ -1114,15 +1124,130 @@ function TypingIndicator({ activeMode }) {
   );
 }
 
+/**
+ * A rendered fenced code block with a language label and Copy button.
+ * Does not execute or eval any content.
+ */
+function CodeBlock({ language, content }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API unavailable or denied — fail silently.
+    }
+  };
+
+  return (
+    <Box
+      component="pre"
+      sx={{
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        borderRadius: 2,
+        border: '1px solid rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+        my: 1.5,
+      }}
+    >
+      {/* Header: language label + copy button */}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{
+          px: 1.5,
+          py: 0.75,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(0,0,0,0.2)',
+        }}
+      >
+        <Typography
+          component="span"
+          variant="caption"
+          sx={{
+            color: 'rgba(255,255,255,0.4)',
+            textTransform: 'uppercase',
+            fontSize: '0.68rem',
+            letterSpacing: '0.07em',
+            fontFamily: 'ui-monospace, Consolas, monospace',
+          }}
+        >
+          {language || 'code'}
+        </Typography>
+        <Button
+          size="small"
+          onClick={handleCopy}
+          aria-label={copied ? 'Code copied' : 'Copy code'}
+          tabIndex={0}
+          sx={{
+            minWidth: 'auto',
+            px: 1.25,
+            py: 0.25,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            textTransform: 'none',
+            color: copied ? '#4ade80' : 'rgba(255,255,255,0.5)',
+            backgroundColor: copied ? 'rgba(74,222,128,0.12)' : 'transparent',
+            border: '1px solid',
+            borderColor: copied ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.12)',
+            borderRadius: 1,
+            '&:hover': {
+              color: 'white',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderColor: 'rgba(255,255,255,0.25)',
+            },
+            '&:focus-visible': {
+              outline: '2px solid rgba(99,102,241,0.7)',
+              outlineOffset: 1,
+            },
+          }}
+        >
+          {copied ? '✓ Copied' : 'Copy'}
+        </Button>
+      </Stack>
+
+      {/* Code content */}
+      <Box
+        component="code"
+        sx={{
+          display: 'block',
+          fontFamily: 'ui-monospace, Consolas, "Courier New", monospace',
+          fontSize: '0.85em',
+          lineHeight: 1.65,
+          color: 'rgba(255,255,255,0.88)',
+          padding: '12px 16px',
+          overflowX: 'auto',
+          whiteSpace: 'pre',
+          tabSize: 2,
+        }}
+      >
+        {content}
+      </Box>
+    </Box>
+  );
+}
+
 function renderMessageText(text) {
   const safe = String(text ?? '');
   if (!safe) return null;
   const fenceParts = safe.split(/```([a-zA-Z0-9_+\-#]*)\n?([\s\S]*?)```/g);
-  return fenceParts.map((part, i) => {
-    if (i % 3 === 0) return renderInline(part, `f-${i}`);
-    if (i % 3 === 1) return null;
-    return <pre key={`f-${i}`}><code>{part.replace(/\n$/, '')}</code></pre>;
-  });
+  const elements = [];
+  for (let i = 0; i < fenceParts.length; i += 3) {
+    if (fenceParts[i]) {
+      elements.push(renderInline(fenceParts[i], `t-${i}`));
+    }
+    if (i + 2 < fenceParts.length) {
+      const lang = fenceParts[i + 1] || '';
+      const content = fenceParts[i + 2].replace(/\n$/, '');
+      elements.push(
+        <CodeBlock key={`c-${i}`} language={lang} content={content} />
+      );
+    }
+  }
+  return elements.length > 0 ? elements : null;
 }
 
 function renderInline(text, keyPrefix) {
