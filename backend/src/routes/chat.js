@@ -114,25 +114,39 @@ router.post('/', requireAuth, async (req, res) => {
     });
   } catch (err) {
     const code = err?.code;
-    console.error('[chat] error:', code || err.message);
+    const msg = err?.message || '';
+    const status = err?.status || err?.response?.status;
+
+    // Log safely — never print the API key, token, or full response body.
+    const logCategory =
+      msg.includes('not found') || msg.includes('404') || msg.includes('not supported')
+        ? 'MODEL_NOT_FOUND'
+        : msg.includes('rate limit') || msg.includes('429')
+        ? 'RATE_LIMIT'
+        : msg.includes('blocked') || msg.includes('blocked for') || msg.includes('SAFETY')
+        ? 'SAFETY_BLOCK'
+        : msg.includes('network') || msg.includes('fetch') || msg.includes('timeout') || msg.includes('ETIMEDOUT')
+        ? 'NETWORK_ERROR'
+        : 'GEMINI_ERROR';
+    console.error('[chat] error category:', logCategory, '| code:', code || status || 'none');
 
     if (code === 'GEMINI_NOT_CONFIGURED') {
-      return res.status(503).json({
-        success: false,
-        error: 'AI service is not configured. Please contact the administrator.',
-      });
+      return res.status(503).json({ success: false, error: 'AI service is not configured.' });
     }
     if (code === 'INVALID_MODE') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid mode.',
-      });
+      return res.status(400).json({ success: false, error: 'Invalid mode.' });
+    }
+    if (logCategory === 'MODEL_NOT_FOUND') {
+      return res.status(503).json({ success: false, error: 'AI model unavailable. Check GEMINI_MODEL configuration.' });
+    }
+    if (logCategory === 'RATE_LIMIT') {
+      return res.status(429).json({ success: false, error: 'AI service is temporarily busy. Please try again shortly.' });
+    }
+    if (logCategory === 'SAFETY_BLOCK') {
+      return res.status(400).json({ success: false, error: 'The request was blocked by the AI service. Please adjust your message and retry.' });
     }
 
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to generate a response. Please try again.',
-    });
+    return res.status(500).json({ success: false, error: 'Failed to generate a response. Please try again.' });
   }
 });
 

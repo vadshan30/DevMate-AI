@@ -1,44 +1,207 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
   CircularProgress,
-  Container,
-  Paper,
+  Divider,
   Stack,
   Typography,
   Alert,
-  Divider,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../firebase/AuthContext';
 
-export default function Login() {
+/* ───────────────────────────── palette ────────────────────────────── */
+
+const PALETTE = {
+  bg: '#080c14',
+  surface: 'rgba(13, 17, 23, 0.7)',
+  surfaceCard: 'rgba(15, 23, 42, 0.85)',
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderCard: 'rgba(255, 255, 255, 0.10)',
+  textPrimary: 'rgba(255, 255, 255, 0.92)',
+  textSecondary: 'rgba(255, 255, 255, 0.55)',
+  textDim: 'rgba(255, 255, 255, 0.35)',
+  primaryFrom: '#6366f1',
+  primaryTo: '#8b5cf6',
+  debug: '#22c55e',
+  optimize: '#f59e0b',
+  secure: '#06b6d4',
+};
+
+const primaryGradient = `linear-gradient(135deg, ${PALETTE.primaryFrom} 0%, ${PALETTE.primaryTo} 100%)`;
+
+/* ───────────────────────────── left panel ────────────────────────── */
+
+function LeftPanel() {
+  return (
+    <Box
+      sx={{
+        display: { xs: 'none', md: 'flex' },
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+        background: `linear-gradient(160deg, #0d0f1a 0%, #1a1040 50%, #0f172a 100%)`,
+        position: 'relative',
+        overflow: 'hidden',
+        /* subtle dot-grid overlay */
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          backgroundImage:
+            'radial-gradient(rgba(99,102,241,0.15) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+          pointerEvents: 'none',
+        },
+        /* gradient glow from bottom-left */
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: '-20%',
+          left: '-10%',
+          width: '60%',
+          height: '60%',
+          background:
+            'radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        },
+      }}
+    >
+      <Stack
+        spacing={4}
+        alignItems="flex-start"
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          px: { md: 6, lg: 10 },
+          maxWidth: 480,
+        }}
+      >
+        {/* Logo mark */}
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: primaryGradient,
+            fontSize: 32,
+            boxShadow: `0 0 40px rgba(99,102,241,0.35)`,
+          }}
+        >
+          🤖
+        </Box>
+
+        {/* Brand heading */}
+        <Stack spacing={1.5}>
+          <Typography
+            variant="h3"
+            component="h1"
+            fontWeight={800}
+            color={PALETTE.textPrimary}
+            lineHeight={1.1}
+            sx={{ fontSize: { xs: '2rem', md: '2.5rem' } }}
+          >
+            DevMate AI
+          </Typography>
+          <Typography
+            variant="body1"
+            color={PALETTE.textSecondary}
+            sx={{ fontSize: '1.05rem', lineHeight: 1.65, maxWidth: 400 }}
+          >
+            Your AI-powered developer assistant for debugging, optimization, and security.
+          </Typography>
+        </Stack>
+
+        {/* Feature highlights */}
+        <Stack spacing={1.5} sx={{ mt: 1 }}>
+          {[
+            { icon: '🐛', label: 'Debug', desc: 'Find bugs and root causes', color: PALETTE.debug },
+            { icon: '⚡', label: 'Optimize', desc: 'Improve efficiency & complexity', color: PALETTE.optimize },
+            { icon: '🔐', label: 'Secure', desc: 'Audit vulnerabilities', color: PALETTE.secure },
+          ].map((f) => (
+            <Stack
+              key={f.label}
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+            >
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `${f.color}18`,
+                  border: `1px solid ${f.color}30`,
+                  fontSize: 18,
+                  flexShrink: 0,
+                }}
+              >
+                {f.icon}
+              </Box>
+              <Stack spacing={0}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  color={PALETTE.textPrimary}
+                  lineHeight={1.2}
+                >
+                  {f.label}
+                </Typography>
+                <Typography variant="caption" color={PALETTE.textDim} lineHeight={1.2}>
+                  {f.desc}
+                </Typography>
+              </Stack>
+            </Stack>
+          ))}
+        </Stack>
+
+        {/* Footer note */}
+        <Typography variant="caption" color={PALETTE.textDim} sx={{ mt: 2 }}>
+          Built with Firebase Authentication · Powered by Gemini
+        </Typography>
+      </Stack>
+    </Box>
+  );
+}
+
+/* ───────────────────────────── right panel ────────────────────────── */
+
+function RightPanel() {
   const { user, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // While Firebase is still resolving the initial auth state, show a spinner.
   if (loading) {
     return (
       <Box
         sx={{
-          minHeight: '100vh',
+          flex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          background: PALETTE.bg,
         }}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: PALETTE.primaryFrom }} />
       </Box>
     );
   }
 
-  // Already signed in → bounce to dashboard.
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    navigate('/dashboard', { replace: true });
+    return null;
   }
 
   const handleSignIn = async () => {
@@ -66,117 +229,151 @@ export default function Login() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        flex: { xs: 1, md: 0.7 },
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background:
-          'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
-        px: 2,
-        py: 6,
+        background: PALETTE.bg,
+        px: { xs: 2, sm: 4 },
+        py: { xs: 6, sm: 0 },
+        minHeight: { xs: '100vh', md: '100vh' },
       }}
     >
-      <Container maxWidth="sm">
-        <Stack spacing={4} alignItems="center">
-          {/* Brand */}
-          <Stack spacing={1} alignItems="center" textAlign="center">
+      {/* Auth card */}
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: 420,
+          p: { xs: 3, sm: 4 },
+          borderRadius: '16px',
+          background: PALETTE.surfaceCard,
+          backdropFilter: 'blur(24px)',
+          border: `1px solid ${PALETTE.borderCard}`,
+          boxShadow: `0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)`,
+        }}
+      >
+        <Stack spacing={3.5}>
+          {/* Card header */}
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <Box
               sx={{
-                width: 72,
-                height: 72,
-                borderRadius: 4,
+                width: 40,
+                height: 40,
+                borderRadius: 2,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                boxShadow: '0 12px 30px rgba(99, 102, 241, 0.4)',
-                fontSize: 36,
+                background: primaryGradient,
+                fontSize: 22,
+                flexShrink: 0,
+                boxShadow: `0 0 20px rgba(99,102,241,0.25)`,
               }}
             >
               🤖
             </Box>
-            <Typography variant="h3" component="h1" fontWeight={700} color="white">
-              DevMate AI
-            </Typography>
-            <Typography variant="body1" color="rgba(255,255,255,0.7)" maxWidth={420}>
-              Your senior software engineering assistant. Debug, optimize, and secure
-              your code with AI.
-            </Typography>
-          </Stack>
-
-          {/* Card */}
-          <Paper
-            elevation={8}
-            sx={{
-              width: '100%',
-              p: { xs: 3, sm: 4 },
-              borderRadius: 4,
-              backgroundColor: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            <Stack spacing={3}>
-              <Stack spacing={0.5}>
-                <Typography variant="h5" fontWeight={600} color="white">
-                  Welcome back
-                </Typography>
-                <Typography variant="body2" color="rgba(255,255,255,0.6)">
-                  Sign in to continue to your dashboard.
-                </Typography>
-              </Stack>
-
-              {error && (
-                <Alert severity="error" variant="outlined" onClose={() => setError('')}>
-                  {error}
-                </Alert>
-              )}
-
-              <Button
-                onClick={handleSignIn}
-                disabled={submitting}
-                variant="contained"
-                size="large"
-                startIcon={
-                  submitting ? (
-                    <CircularProgress size={18} color="inherit" />
-                  ) : (
-                    <GoogleIcon />
-                  )
-                }
-                sx={{
-                  py: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  backgroundColor: 'white',
-                  color: '#0f172a',
-                  '&:hover': {
-                    backgroundColor: '#e2e8f0',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: 'rgba(255,255,255,0.7)',
-                    color: '#475569',
-                  },
-                }}
+            <Stack spacing={0}>
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                color={PALETTE.textPrimary}
+                lineHeight={1.2}
               >
-                {submitting ? 'Signing in…' : 'Continue with Google'}
-              </Button>
-
-              <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-                <Typography variant="caption" color="rgba(255,255,255,0.5)">
-                  Secure authentication via Firebase
-                </Typography>
-              </Divider>
-
-              <Typography variant="caption" color="rgba(255,255,255,0.5)" textAlign="center">
-                By continuing, you agree to DevMate AI&apos;s Terms of Service and
-                Privacy Policy.
+                Welcome to DevMate AI
+              </Typography>
+              <Typography variant="caption" color={PALETTE.textSecondary}>
+                Sign in to continue to your dashboard.
               </Typography>
             </Stack>
-          </Paper>
+          </Stack>
+
+          {/* Error */}
+          {error && (
+            <Alert
+              severity="error"
+              variant="outlined"
+              onClose={() => setError('')}
+              sx={{
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                color: '#fca5a5',
+                background: 'rgba(239, 68, 68, 0.08)',
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {/* Sign-in button */}
+          <Button
+            onClick={handleSignIn}
+            disabled={submitting}
+            variant="contained"
+            size="large"
+            startIcon={
+              submitting ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <GoogleIcon sx={{ fontSize: 20 }} />
+              )
+            }
+            sx={{
+              py: 1.5,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '1rem',
+              backgroundColor: 'white',
+              color: '#0f172a',
+              '&:hover': {
+                backgroundColor: '#e2e8f0',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: 'rgba(255,255,255,0.75)',
+                color: '#64748b',
+              },
+            }}
+          >
+            {submitting ? 'Signing in…' : 'Continue with Google'}
+          </Button>
+
+          <Divider sx={{ borderColor: PALETTE.border }}>
+            <Typography variant="caption" color={PALETTE.textDim}>
+              Secure authentication via Firebase
+            </Typography>
+          </Divider>
+
+          <Typography
+            variant="caption"
+            color={PALETTE.textDim}
+            textAlign="center"
+            display="block"
+          >
+            By continuing, you agree to DevMate AI&apos;s Terms of Service and Privacy Policy.
+          </Typography>
         </Stack>
-      </Container>
+      </Box>
+    </Box>
+  );
+}
+
+/* ───────────────────────────── root ──────────────────────────────── */
+
+export default function Login() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        backgroundColor: PALETTE.bg,
+      }}
+    >
+      {/* Left branding panel — hidden on mobile */}
+      {!isMobile && <LeftPanel />}
+
+      {/* Right auth panel */}
+      <RightPanel />
     </Box>
   );
 }

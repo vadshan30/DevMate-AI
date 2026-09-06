@@ -5,7 +5,11 @@ import {
   isValidMode,
 } from '../config/modeInstructions.js';
 
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+// Default model. 2025-11+: gemini-1.5-flash and gemini-2.5-flash are
+// no longer available to new projects on the v1beta generateContent
+// endpoint. gemini-3.6-flash is the currently supported Flash-tier
+// model returned by ListModels and is recommended for new code.
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const MAX_HISTORY_TURNS = 20;
 
 let cachedClient = null;
